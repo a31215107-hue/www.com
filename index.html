@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جستجوگرها</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .search-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .search-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .search-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .search-button.web {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+        
+        .search-button.image {
+            background: linear-gradient(45deg, #fa709a, #fee140);
+        }
+        
+        .search-button.video {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+        
+        .search-button.news {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+        }
+        
+        .search-button.map {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        }
+        
+        .search-button.academic {
+            background: linear-gradient(45deg, #43e97b, #38f9d7);
+        }
+        
+        .icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .search-form input {
+            flex: 1;
+        }
+        
+        .search-form button {
+            padding: 15px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .search-form button:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 جستجوگرها</h1>
+        
+        <div class="search-grid">
+            <button class="search-button web" onclick="search('web')">
+                <div class="icon">🌐</div>
+                جستجوی اینترنتی
+            </button>
+            
+            <button class="search-button image" onclick="search('image')">
+                <div class="icon">🖼️</div>
+                جستجوی تصاویر
+            </button>
+            
+            <button class="search-button video" onclick="search('video')">
+                <div class="icon">🎬</div>
+                جستجوی ویدیو
+            </button>
+            
+            <button class="search-button news" onclick="search('news')">
+                <div class="icon">📰</div>
+                جستجوی اخبار
+            </button>
+            
+            <button class="search-button map" onclick="search('map')">
+                <div class="icon">🗺️</div>
+                نقشه و مکان
+            </button>
+            
+            <button class="search-button academic" onclick="search('academic')">
+                <div class="icon">📚</div>
+                جستجوی علمی
+            </button>
+        </div>
+        
+        <div class="search-form">
+            <input type="text" class="search-input" id="customSearch" placeholder="جستجوی دلخواه...">
+            <button onclick="customSearch()">جستجو</button>
+        </div>
+    </div>
+
+    <script>
+        function search(type) {
+            const query = prompt('عبارت مورد نظر برای جستجو را وارد کنید:');
+            if (!query) return;
+            
+            const searchEngines = {
+                web: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+                image: `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`,
+                video: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
+                news: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
+                map: `https://www.google.com/maps/search/${encodeURIComponent(query)}`,
+                academic: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`
+            };
+            
+            window.open(searchEngines[type], '_blank');
+        }
+        
+        function customSearch() {
+            const query = document.getElementById('customSearch').value;
+            if (!query) return;
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
