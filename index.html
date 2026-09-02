@@ -2,196 +2,341 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جستجوگرها</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>بازی کامیون اسپرت</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; user-select: none; -webkit-user-select: none; }
+        body { overflow: hidden; background: #222; font-family: Tahoma, sans-serif; }
+        canvas { display: block; width: 100%; height: 100%; }
         
-        .container {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-        }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+        .top-btn {
+            position: absolute; top: 15px; width: 45px; height: 45px; border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; pointer-events: auto; z-index: 20; color: white; font-size: 18px;
         }
-        
-        .search-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        .top-btn:active { transform: scale(0.9); background: rgba(255, 255, 255, 0.3); }
+        #pause-btn { left: 15px; }
+        #map-btn { left: 70px; }
+        #sound-btn { left: 125px; }
+
+        #score-board { 
+            position: absolute; top: 15px; right: 15px; 
+            background: rgba(0,0,0,0.6); color: white; padding: 8px 15px; 
+            border-radius: 12px; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1);
         }
-        
-        .search-button {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            border: none;
-            padding: 20px;
-            border-radius: 15px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: block;
-            position: relative;
-            overflow: hidden;
+
+        .menu-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 30; 
+            flex-direction: column; align-items: center; justify-content: center; pointer-events: auto;
         }
-        
-        .search-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        .menu-box {
+            background: rgba(40,40,40,0.9); border: 1px solid rgba(255,255,255,0.1);
+            padding: 25px; border-radius: 15px; text-align: center; color: white; width: 90%; max-width: 320px;
         }
-        
-        .search-button.web {
-            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        .menu-title { font-size: 20px; margin-bottom: 15px; }
+        .menu-btn {
+            display: block; width: 100%; padding: 12px; margin: 8px 0;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: white; border-radius: 8px; font-size: 15px; cursor: pointer; font-family: Tahoma;
         }
+        .menu-btn:active { background: rgba(255,255,255,0.25); }
         
-        .search-button.image {
-            background: linear-gradient(45deg, #fa709a, #fee140);
+        .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .map-card {
+            position: relative; border-radius: 8px; overflow: hidden; cursor: pointer;
+            border: 2px solid transparent; height: 80px; background: #333;
         }
-        
-        .search-button.video {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+        .map-card.active { border-color: #4CAF50; }
+        .map-card div.thumb { width: 100%; height: 100%; }
+        .map-card span {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.7); color: white; padding: 4px; font-size: 11px;
         }
-        
-        .search-button.news {
-            background: linear-gradient(45deg, #f093fb, #f5576c);
+
+        .controls {
+            position: absolute; bottom: 20px; width: 100%; display: flex; 
+            justify-content: space-between; padding: 0 20px; pointer-events: auto; align-items: flex-end;
         }
-        
-        .search-button.map {
-            background: linear-gradient(45deg, #4facfe, #00f2fe);
+        .pedal {
+            width: 65px; height: 100px; border-radius: 8px 8px 15px 15px;
+            position: relative; cursor: pointer; transition: transform 0.05s;
+            box-shadow: inset 0 -4px 8px rgba(0,0,0,0.4), 0 8px 15px rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.9); font-weight: bold; font-size: 14px;
         }
-        
-        .search-button.academic {
-            background: linear-gradient(45deg, #43e97b, #38f9d7);
+        .pedal:active, .pedal.pressed { transform: translateY(8px); box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.4); }
+        .pedal::before {
+            content: ''; position: absolute; top: 8px; bottom: 8px; left: 8px; right: 8px;
+            background: repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0,0,0,0.2) 6px, rgba(0,0,0,0.2) 10px);
+            border-radius: 4px; pointer-events: none;
         }
-        
-        .icon {
-            font-size: 24px;
-            margin-bottom: 10px;
+        #pedal-brake { background: linear-gradient(180deg, #ff5252, #c62828); border: 2px solid #ff8a80; }
+        #pedal-gas { background: linear-gradient(180deg, #69f0ae, #2e7d32); border: 2px solid #b9f6ca; height: 115px; }
+
+        @media (min-width: 768px) {
+            .controls { display: none; }
+            #desktop-hint { display: block; position: absolute; bottom: 15px; width: 100%; text-align: center; color: #aaa; font-size: 13px; }
         }
+        @media (max-width: 767px) { #desktop-hint { display: none; } }
         
-        .search-input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .search-input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .search-form {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .search-form input {
-            flex: 1;
-        }
-        
-        .search-form button {
-            padding: 15px 25px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        
-        .search-form button:hover {
-            background: #5a67d8;
+        #error-msg {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: red; color: white; padding: 20px; border-radius: 10px; z-index: 100; text-align: center; width: 80%;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 جستجوگرها</h1>
-        
-        <div class="search-grid">
-            <button class="search-button web" onclick="search('web')">
-                <div class="icon">🌐</div>
-                جستجوی اینترنتی
-            </button>
-            
-            <button class="search-button image" onclick="search('image')">
-                <div class="icon">🖼️</div>
-                جستجوی تصاویر
-            </button>
-            
-            <button class="search-button video" onclick="search('video')">
-                <div class="icon">🎬</div>
-                جستجوی ویدیو
-            </button>
-            
-            <button class="search-button news" onclick="search('news')">
-                <div class="icon">📰</div>
-                جستجوی اخبار
-            </button>
-            
-            <button class="search-button map" onclick="search('map')">
-                <div class="icon">🗺️</div>
-                نقشه و مکان
-            </button>
-            
-            <button class="search-button academic" onclick="search('academic')">
-                <div class="icon">📚</div>
-                جستجوی علمی
-            </button>
-        </div>
-        
-        <div class="search-form">
-            <input type="text" class="search-input" id="customSearch" placeholder="جستجوی دلخواه...">
-            <button onclick="customSearch()">جستجو</button>
-        </div>
-    </div>
 
-    <script>
-        function search(type) {
-            const query = prompt('عبارت مورد نظر برای جستجو را وارد کنید:');
-            if (!query) return;
-            
-            const searchEngines = {
-                web: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-                image: `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`,
-                video: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
-                news: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
-                map: `https://www.google.com/maps/search/${encodeURIComponent(query)}`,
-                academic: `https://scholar.google.com/scholar?q=${encodeURIComponent(query)}`
-            };
-            
-            window.open(searchEngines[type], '_blank');
+<div id="error-msg"></div>
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui-layer">
+    <div class="top-btn" id="pause-btn">⏸️</div>
+    <div class="top-btn" id="map-btn">🗺️</div>
+    <div class="top-btn" id="sound-btn">🔊</div>
+    <div id="score-board">مسافت: ۰ متر</div>
+    <div id="desktop-hint">کلیدها: ← → | P: مکث | M: مپ</div>
+    
+    <div class="controls">
+        <div class="pedal" id="pedal-brake">ترمز</div>
+        <div class="pedal" id="pedal-gas">گاز</div>
+    </div>
+</div>
+
+<div class="menu-overlay" id="pause-menu">
+    <div class="menu-box">
+        <div class="menu-title" id="pause-title">⏸️ بازی متوقف شد</div>
+        <button class="menu-btn" id="resume-btn">▶️ ادامه بازی</button>
+        <button class="menu-btn" id="restart-menu-btn">🔄 شروع مجدد</button>
+    </div>
+</div>
+
+<div class="menu-overlay" id="map-menu">
+    <div class="menu-box">
+        <div class="menu-title">🗺️ انتخاب مپ</div>
+        <div class="map-grid">
+            <div class="map-card active" data-map="forest"><div class="thumb" style="background: linear-gradient(#87CEEB, #4CAF50);"></div><span>🌲 جنگل</span></div>
+            <div class="map-card" data-map="desert"><div class="thumb" style="background: linear-gradient(#FF9800, #D7CCC8);"></div><span>🏜️ بیابان</span></div>
+            <div class="map-card" data-map="snow"><div class="thumb" style="background: linear-gradient(#B0BEC5, #FFFFFF);"></div><span>❄️ برف</span></div>
+            <div class="map-card" data-map="night"><div class="thumb" style="background: linear-gradient(#1a1a2e, #0f3460);"></div><span>🌙 شب نئون</span></div>
+        </div>
+        <button class="menu-btn" id="close-map-btn" style="margin-top: 15px;">بستن</button>
+    </div>
+</div>
+
+<script>
+// سیستم مدیریت خطا برای جلوگیری از صفحه سیاه
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    document.getElementById('error-msg').style.display = 'block';
+    document.getElementById('error-msg').innerHTML = "خطا در اجرا:<br>" + msg + "<br>لطفاً از مرورگر Chrome استفاده کنید.";
+    return false;
+};
+
+try {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- سیستم صدا ---
+    const AudioSys = {
+        ctx: null, enabled: true, engineOsc: null, engineGain: null,
+        init() {
+            if (!this.ctx) {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.engineOsc = this.ctx.createOscillator();
+                    this.engineOsc.type = 'sawtooth'; this.engineOsc.frequency.value = 50;
+                    this.engineGain = this.ctx.createGain(); this.engineGain.gain.value = 0;
+                    const filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400;
+                    this.engineOsc.connect(filter); filter.connect(this.engineGain); this.engineGain.connect(this.ctx.destination);
+                    this.engineOsc.start();
+                } catch(e) {}
+            }
+            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+        },
+        updateEngine(speed, isGas) {
+            if (!this.enabled || !this.ctx) return;
+            this.engineOsc.frequency.setTargetAtTime(50 + Math.abs(speed) * 15, this.ctx.currentTime, 0.1);
+            this.engineGain.gain.setTargetAtTime(isGas ? 0.12 : 0.04, this.ctx.currentTime, 0.1);
+        },
+        playBrake() {
+            if (!this.enabled || !this.ctx) return;
+            const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.08, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+            osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+        },
+        playCrash() {
+            if (!this.enabled || !this.ctx) return;
+            const bufferSize = this.ctx.sampleRate * 0.4, buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate), data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = this.ctx.createBufferSource(); noise.buffer = buffer; const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.4, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+            noise.connect(gain); gain.connect(this.ctx.destination); noise.start();
+        },
+        toggle() { this.enabled = !this.enabled; if (!this.enabled && this.engineGain) this.engineGain.gain.value = 0; return this.enabled; }
+    };
+
+    const THEMES = {
+        forest: { skyTop: '#87CEEB', skyBot: '#E0F7FA', ground: '#5D4037', grass: '#4CAF50' },
+        desert: { skyTop: '#FF9800', skyBot: '#FFECB3', ground: '#D7CCC8', grass: '#FFB74D' },
+        snow:   { skyTop: '#B0BEC5', skyBot: '#ECEFF1', ground: '#CFD8DC', grass: '#FFFFFF' },
+        night:  { skyTop: '#1a1a2e', skyBot: '#16213e', ground: '#0f3460', grass: '#e94560' }
+    };
+    let currentTheme = 'forest';
+
+    const CONFIG = { gravity: 0.5, maxSpeed: 12, acceleration: 0.4, brakeForce: 0.6, friction: 0.98, terrainStep: 50, terrainAmp: 60, wheelRadius: 18, chassisHeight: 40, cabinHeight: 35 };
+    let state = { running: true, paused: false, score: 0, cameraX: 0, keys: { left: false, right: false }, width: window.innerWidth, height: window.innerHeight };
+
+    class Terrain {
+        constructor() { this.points = []; this.step = CONFIG.terrainStep; this.offsetY = state.height * 0.65; this.generateInitial(); }
+        generateInitial() { for (let i = 0; i < 200; i++) this.addPoint(i * this.step); }
+        addPoint(x) {
+            const y = Math.sin(x * 0.004) * CONFIG.terrainAmp + Math.sin(x * 0.011) * (CONFIG.terrainAmp * 0.4) + Math.cos(x * 0.0015) * (CONFIG.terrainAmp * 1.2);
+            this.points.push({ x, y });
         }
-        
-        function customSearch() {
-            const query = document.getElementById('customSearch').value;
-            if (!query) return;
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        update(cameraX) {
+            let last = this.points[this.points.length - 1];
+            while (last.x < cameraX + state.width + 600) { this.addPoint(last.x + this.step); last = this.points[this.points.length - 1]; }
+            while (this.points.length > 0 && this.points[0].x < cameraX - 600) this.points.shift();
         }
-    </script>
-</body>
-</html>
+        getHeightAt(x) {
+            const p1 = this.points.find(p => p.x <= x && p.x + this.step > x);
+            if (!p1) return 0;
+            const p2 = this.points[this.points.indexOf(p1) + 1];
+            if (!p2) return p1.y;
+            return p1.y + (p2.y - p1.y) * ((x - p1.x) / this.step);
+        }
+        draw(ctx, camX) {
+            const theme = THEMES[currentTheme], offY = this.offsetY;
+            ctx.fillStyle = theme.ground; ctx.beginPath(); ctx.moveTo(this.points[0].x - camX, state.height);
+            for (let p of this.points) { const sx = p.x - camX; if (sx > -100 && sx < state.width + 100) ctx.lineTo(sx, p.y + offY); }
+            ctx.lineTo(this.points[this.points.length-1].x - camX, state.height); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = theme.grass; ctx.lineWidth = 6; ctx.stroke();
+        }
+    }
+
+    class Truck {
+        constructor(terrain) {
+            this.terrain = terrain; this.wheelBase = 100;
+            this.rearWheel = { x: -this.wheelBase/2, y: 0 }; this.frontWheel = { x: this.wheelBase/2, y: 0 }; this.reset();
+        }
+        reset() { this.x = 300; this.vx = 0; this.angle = 0; this.updateWheels(); }
+        updateWheels() {
+            const rG = this.terrain.getHeightAt(this.x + this.rearWheel.x), fG = this.terrain.getHeightAt(this.x + this.frontWheel.x);
+            this.rearWheel.y = rG; this.frontWheel.y = fG; this.angle = Math.atan2(fG - rG, this.wheelBase);
+        }
+        update() {
+            if (state.keys.right) this.vx += CONFIG.acceleration;
+            if (state.keys.left) { this.vx -= CONFIG.brakeForce; if (this.vx > 0.5) AudioSys.playBrake(); }
+            this.vx *= CONFIG.friction; this.vx = Math.max(Math.min(this.vx, CONFIG.maxSpeed), -CONFIG.maxSpeed * 0.4);
+            this.x += this.vx; this.updateWheels(); AudioSys.updateEngine(this.vx, state.keys.right);
+            if (Math.abs(this.angle) > Math.PI / 2.2 && Math.abs(this.vx) > 6) gameOver();
+            state.score = Math.max(state.score, Math.floor((this.x - 300) / 10));
+        }
+        draw(ctx, camX) {
+            const offY = this.terrain.offsetY, r = CONFIG.wheelRadius;
+            const rearX = this.x + this.rearWheel.x - camX, rearY = this.rearWheel.y + offY - r;
+            const frontX = this.x + this.frontWheel.x - camX, frontY = this.frontWheel.y + offY - r;
+            const centerX = (rearX + frontX) / 2, centerY = (rearY + frontY) / 2 - r - CONFIG.chassisHeight / 2;
+
+            ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(this.angle);
+            const w = this.wheelBase + 40, h = CONFIG.chassisHeight;
+
+            // رسم بدنه بدون roundRect (فقط fillRect ساده)
+            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(-w/2 + 5, h/2 + 5, w - 10, 10);
+            ctx.fillStyle = '#D32F2F'; ctx.fillRect(-w/2, -h/2, w, h);
+            ctx.fillStyle = '#212121'; ctx.beginPath(); ctx.moveTo(-w/2 + 20, -h/2); ctx.lineTo(-w/2 + 60, h/2); ctx.lineTo(-w/2 + 80, h/2); ctx.lineTo(-w/2 + 40, -h/2); ctx.fill();
+            ctx.fillStyle = '#111'; ctx.fillRect(w/2 - 55, -h/2 - CONFIG.cabinHeight, 55, CONFIG.cabinHeight);
+            ctx.fillStyle = '#4FC3F7'; ctx.fillRect(w/2 - 48, -h/2 - CONFIG.cabinHeight + 5, 40, 20);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(w/2 - 45, -h/2 - CONFIG.cabinHeight + 7, 10, 15);
+            ctx.fillStyle = '#FFF'; ctx.shadowColor = '#FFF'; ctx.shadowBlur = 10; ctx.fillRect(w/2 - 50, -h/2 - CONFIG.cabinHeight - 5, 45, 4); ctx.shadowBlur = 0;
+            ctx.fillStyle = '#BDBDBD'; ctx.fillRect(w/2 - 5, -h/2 + 5, 8, h - 10);
+            ctx.fillStyle = '#FF5252'; ctx.fillRect(-w/2 - 2, -h/2 + 5, 4, 15);
+            ctx.restore();
+
+            this.drawSportWheel(ctx, rearX, rearY, r); this.drawSportWheel(ctx, frontX, frontY, r);
+        }
+        drawSportWheel(ctx, x, y, r) {
+            ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#333'; ctx.lineWidth = 2; const rot = (this.x * 0.05) % (Math.PI * 2);
+            for(let i=0; i<8; i++) { const a = rot + i * Math.PI / 4; ctx.beginPath(); ctx.moveTo(x + Math.cos(a)*(r-4), y + Math.sin(a)*(r-4)); ctx.lineTo(x + Math.cos(a)*r, y + Math.sin(a)*r); ctx.stroke(); }
+            ctx.fillStyle = '#424242'; ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#757575'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - r*0.5, y); ctx.lineTo(x + r*0.5, y); ctx.moveTo(x, y - r*0.5); ctx.lineTo(x, y + r*0.5); ctx.stroke();
+            ctx.fillStyle = '#D32F2F'; ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+
+    const terrain = new Terrain(), truck = new Truck(terrain);
+
+    function resize() {
+        state.width = window.innerWidth; state.height = window.innerHeight;
+        canvas.width = state.width; canvas.height = state.height; terrain.offsetY = state.height * 0.65;
+    }
+
+    function togglePause(forcePause = null) {
+        if (!state.running && forcePause !== true) return;
+        state.paused = forcePause !== null ? forcePause : !state.paused;
+        const menu = document.getElementById('pause-menu'), icon = document.getElementById('pause-btn');
+        if (state.paused) {
+            menu.style.display = 'flex'; icon.innerText = '▶️';
+            if (AudioSys.engineGain) AudioSys.engineGain.gain.setTargetAtTime(0, AudioSys.ctx.currentTime, 0.1);
+        } else {
+            menu.style.display = 'none'; icon.innerText = '⏸️'; AudioSys.init(); loop();
+        }
+    }
+
+    function gameOver() {
+        if (!state.running) return;
+        state.running = false; state.paused = true; AudioSys.playCrash();
+        if (AudioSys.engineGain) AudioSys.engineGain.gain.setTargetAtTime(0, AudioSys.ctx.currentTime, 0.1);
+        document.getElementById('pause-menu').style.display = 'flex';
+        document.getElementById('pause-title').innerText = '💥 واژگون شدی!';
+        document.getElementById('resume-btn').style.display = 'none';
+        document.getElementById('pause-btn').innerText = '⏸️';
+    }
+
+    function resetGame() {
+        state.running = true; state.paused = false; state.score = 0; state.cameraX = 0; state.keys = { left: false, right: false };
+        truck.reset();
+        document.getElementById('pause-menu').style.display = 'none'; document.getElementById('map-menu').style.display = 'none';
+        document.getElementById('pause-title').innerText = '⏸️ بازی متوقف شد'; document.getElementById('resume-btn').style.display = 'block';
+        document.getElementById('pause-btn').innerText = '⏸️'; AudioSys.init(); loop();
+    }
+
+    function changeMap(mapName) {
+        currentTheme = mapName;
+        document.querySelectorAll('.map-card').forEach(c => { c.classList.remove('active'); if(c.dataset.map === mapName) c.classList.add('active'); });
+        if (state.paused) {
+            ctx.clearRect(0,0,state.width, state.height);
+            const t = THEMES[currentTheme], g = ctx.createLinearGradient(0, 0, 0, state.height);
+            g.addColorStop(0, t.skyTop); g.addColorStop(1, t.skyBot); ctx.fillStyle = g; ctx.fillRect(0, 0, state.width, state.height);
+            terrain.draw(ctx, state.cameraX); truck.draw(ctx, state.cameraX);
+        }
+    }
+
+    function loop() {
+        if (!state.running || state.paused) return;
+        ctx.clearRect(0, 0, state.width, state.height);
+        const t = THEMES[currentTheme], g = ctx.createLinearGradient(0, 0, 0, state.height);
+        g.addColorStop(0, t.skyTop); g.addColorStop(1, t.skyBot); ctx.fillStyle = g; ctx.fillRect(0, 0, state.width, state.height);
+        terrain.update(truck.x); truck.update();
+        state.cameraX += ((truck.x - state.width * 0.35) - state.cameraX) * 0.12;
+        terrain.draw(ctx, state.cameraX); truck.draw(ctx, state.cameraX);
+        document.getElementById('score-board').innerText = `مسافت: ${state.score} متر`;
+        requestAnimationFrame(loop);
+    }
+
+    const pedalGas = document.getElementById('pedal-gas'), pedalBrake = document.getElementById('pedal-brake');
+    const setKey = (k, v) => { state.keys[k] = v; };
+
+    document.body.addEventListener('touchstart', () => AudioSys.init(), { once: true });
+    document.body.addEventListener('mousedown', () => AudioSys.init(), { once: true });
+
+    ['touchstart', 'mousedown'].forEach(evt => {
+        pedalGas.addEventListener(evt, e => { e.preventDefault(); setKey('right', true); pedalGas.classList.add('pressed'); });
+        pedalBrake.addEventListener(evt, e => { e.preventDefault(); setKey('left', true); pedalBrake.classList.
